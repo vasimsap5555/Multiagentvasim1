@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Topic to Post</title>
+<style>
+  :root { --ink:#1a1a1a; --muted:#6b6b6b; --accent:#1f4fd8; --bg:#f4f1ec; --line:#e6e1d8; }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+         background:var(--bg); color:var(--ink); font:16px/1.5 -apple-system,"Segoe UI",Helvetica,Arial,sans-serif; padding:24px; }
+  .card { width:100%; max-width:460px; background:#fff; border-radius:14px; padding:32px;
+          box-shadow:0 8px 30px rgba(0,0,0,.08); }
+  h1 { margin:0 0 4px; font:600 26px Georgia,serif; }
+  p.sub { margin:0 0 24px; color:var(--muted); }
+  label { display:block; font-weight:600; font-size:14px; margin:16px 0 6px; }
+  input[type=text], input[type=email], input[type=url] {
+    width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:8px; font:inherit; }
+  input:focus { outline:2px solid var(--accent); outline-offset:1px; }
+  button { width:100%; margin-top:24px; padding:13px; border:0; border-radius:8px; background:var(--accent);
+           color:#fff; font:600 16px inherit; cursor:pointer; }
+  button:disabled { opacity:.6; cursor:wait; }
+  #status { margin-top:16px; padding:12px 14px; border-radius:8px; font-size:14px; display:none; }
+  #status.ok { display:block; background:#e8f5ec; color:#17642f; }
+  #status.info { display:block; background:#e9effd; color:#1b3a9c; }
+  #status.err { display:block; background:#fdecec; color:#9b1c1c; }
+</style>
+</head>
+<body>
+  <main class="card">
+    <h1>Topic to Post</h1>
+    <p class="sub">Enter a topic and your email. Our AI agents research it and email you a ready-to-use post.</p>
+
+    <form id="form">
+      <label for="topic">Topic</label>
+      <input id="topic" type="text" placeholder="e.g. GTA6 reception" required maxlength="120">
+
+      <label for="email">Your email</label>
+      <input id="email" type="email" placeholder="you@example.com" required>
+
+      <button id="submit" type="submit">Send me the post</button>
+    </form>
+    <div id="status" role="status"></div>
+
+  </main>
+
+<script>
+  // Replace the placeholder below with your n8n PRODUCTION webhook URL.
+  const WEBHOOK_URL = "https://shri3727.app.n8n.cloud/webhook/34d17170-7928-4583-afd1-e9f233402b6b";
+
+  const $ = (id) => document.getElementById(id);
+  const status = $("status");
+
+  function show(msg, kind) { status.textContent = msg; status.className = kind; }
+
+  $("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const url = WEBHOOK_URL;
+    if (url === "PUT_YOUR_N8N_WEBHOOK_URL_HERE") return show("This form isn't connected yet: the webhook URL hasn't been set.", "err");
+
+    const btn = $("submit");
+    btn.disabled = true; btn.textContent = "Working...";
+    show("Our multi agents are working to generate the Newsletter. Check your inbox in a minute or two.", "info");
+
+    try {
+      const payload = { topic: $("topic").value.trim(), email: $("email").value.trim() };
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error("Server replied " + res.status);
+      show("Newsletter has been sent. Check your Inbox.", "ok");
+      $("form").reset();
+    } catch (err) {
+      show("Could not reach the workflow: " + err.message + ". Check the URL and that the workflow is active.", "err");
+    } finally {
+      btn.disabled = false; btn.textContent = "Send me the post";
+    }
+  });
+</script>
+</body>
+</html>
